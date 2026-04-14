@@ -15,10 +15,9 @@ else:
     cred = credentials.Certificate(cred_dict)
     
 
-if not firebase_admin._apps:
-    firebase_admin.initialize_app(cred)
 
-db = firestore.client()
+firebase_admin.initialize_app(cred)
+
 
 
 from flask import Flask,render_template, request
@@ -37,26 +36,27 @@ def index():
     link +="<a href=/welcome?u=冠頡&dep=靜宜資管>GET傳值</a><hr>"
     link +="<a href=/account>密碼</a><hr>"
     link += "<a href=/read>讀取Firestore資料(根據lab遞減排序，取前4筆)</a>"
-    link += "<a href=/search>查詢實驗室</a><hr>"
+    link += "<a href=/search>查詢老師研究室</a><hr>"
     return link    
 
-@app.route("/search")
+@app.route("/search", methods=["GET", "POST"])
 def search():
-    keyword = request.args.get("keyword")
+    if request.method == "POST":
+        keyword = request.form["keyword"]
+        db = firestore.client()
+        collection_ref = db.collection("靜宜資管")
+        docs = collection_ref.get()
+       
+        results = []
+        for doc in docs:
+            user = doc.to_dict()
+            if keyword in user.get("name", ""):
+                results.append(f"{user['name']}老師的研究室是在{user['lab']}")
+       
+        return render_template("search.html", results=results, keyword=keyword)
+    else:
+        return render_template("search.html", results=None)
 
-    collection_ref = db.collection("靜宜資管")
-    docs = collection_ref.get()
-
-    results = []
-
-    for doc in docs:
-        user = doc.to_dict()
-        if keyword in user["name"]:
-            results.append({
-                "name": user["name"],
-                "lab": user["lab"]
-            })
-    return results
 
 @app.route("/read")
 def read():
