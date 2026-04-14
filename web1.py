@@ -13,9 +13,12 @@ else:
     firebase_config = os.getenv('FIREBASE_CONFIG')
     cred_dict = json.loads(firebase_config)
     cred = credentials.Certificate(cred_dict)
+    
 
-firebase_admin.initialize_app(cred)
+if not firebase_admin._apps:
+    firebase_admin.initialize_app(cred)
 
+db = firestore.client()
 
 
 from flask import Flask,render_template, request
@@ -34,7 +37,26 @@ def index():
     link +="<a href=/welcome?u=冠頡&dep=靜宜資管>GET傳值</a><hr>"
     link +="<a href=/account>密碼</a><hr>"
     link += "<a href=/read>讀取Firestore資料(根據lab遞減排序，取前4筆)</a>"
+    link += "<a href=/search>查詢實驗室</a><hr>"
     return link    
+
+@app.route("/search")
+def search():
+    keyword = request.args.get("keyword")
+
+    collection_ref = db.collection("靜宜資管")
+    docs = collection_ref.get()
+
+    results = []
+
+    for doc in docs:
+        user = doc.to_dict()
+        if keyword in user["name"]:
+            results.append({
+                "name": user["name"],
+                "lab": user["lab"]
+            })
+    return results
 
 @app.route("/read")
 def read():
