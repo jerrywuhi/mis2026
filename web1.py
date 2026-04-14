@@ -22,6 +22,7 @@ firebase_admin.initialize_app(cred)
 
 from flask import Flask,render_template, request
 from datetime import datetime
+import random
 
 
 app = Flask(__name__)
