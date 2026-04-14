@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>教師研究室查詢</title>
+</head>
+<body>
+    <h1>教師研究室查詢系統</h1>
+   
+    <form method="POST">
+        請輸入老師名字的關鍵字：
+        <input type="text" name="keyword" placeholder="例如：陳" required>
+        <button type="submit">查詢</button>
+    </form>
+
+    {% if results is not none %}
+        <hr>
+        <h3>關於「{{ keyword }}」的查詢結果：</h3>
+        {% if results %}
+            <ul>
+                {% for info in results %}
+                    <li>{{ info }}</li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>找不到符合該關鍵字的老師資料。</p>
+        {% endif %}
+    {% endif %}
+
+    <br>
+    <a href="/">回到網站首頁</a>
+</body>
+</html>
