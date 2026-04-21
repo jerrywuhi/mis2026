@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ATMmovies 電影搜尋</title>
+    <style>
+        body { font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background-color: #f4f4f9; }
+        h1 { text-align: center; color: #333; }
+        .search-container { text-align: center; margin-bottom: 30px; }
+        input[type="text"] { padding: 10px; width: 60%; border: 1px solid #ccc; border-radius: 5px 0 0 5px; font-size: 16px; }
+        button { padding: 10px 20px; border: none; background-color: #007bff; color: white; border-radius: 0 5px 5px 0; cursor: pointer; font-size: 16px; }
+        button:hover { background-color: #0056b3; }
+        #results { list-style-type: none; padding: 0; }
+        .movie-item { background: white; padding: 15px; margin-bottom: 10px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: transform 0.2s; }
+        .movie-item:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        .movie-title { font-size: 18px; font-weight: bold; margin-bottom: 5px; color: #333; display: block; }
+        .movie-link { font-size: 14px; color: #007bff; text-decoration: none; word-break: break-all; }
+        .movie-link:hover { text-decoration: underline; }
+        .no-results { text-align: center; color: #777; font-style: italic; }
+        #loading { text-align: center; display: none; margin: 20px 0; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <h1>ATMmovies 即將上映電影搜尋</h1>
+
+    <div class="search-container">
+        <input type="text" id="searchInput" placeholder="輸入電影名稱關鍵字...">
+        <button onclick="performSearch()">搜尋</button>
+    </div>
+
+    <div id="loading">正在抓取資料，請稍候...</div>
+    <ul id="results">
+        </ul>
+
+    <script>
+        // 按下 Enter 也能搜尋
+        document.getElementById('searchInput').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                performSearch();
+            }
+        });
+
+        async function performSearch() {
+            const query = document.getElementById('searchInput').value;
+            const resultsList = document.getElementById('results');
+            const loadingDiv = document.getElementById('loading');
+            
+            // 清空舊結果，顯示載入中
+            resultsList.innerHTML = '';
+            loadingDiv.style.display = 'block';
+
+            try {
+                // 發送請求給我們自己的 Python 後端 (/search)
+                const response = await fetch(`/get_movies?query=${encodeURIComponent(query)}`);
+                const movies = await response.json();
+
+                // 隱藏載入中
+                loadingDiv.style.display = 'none';
+
+                if (movies.length === 0) {
+                    resultsList.innerHTML = '<li class="no-results">找不到符合關鍵字的電影。</li>';
+                    return;
+                }
+
+                // 將結果渲染成 HTML
+                movies.forEach(movie => {
+                    const li = document.createElement('li');
+                    li.className = 'movie-item';
+                    li.innerHTML = `
+                        <span class="movie-title">${movie.title}</span>
+                        <a href="${movie.url}" target="_blank" class="movie-link">${movie.url}</a>
+                    `;
+                    resultsList.appendChild(li);
+                });
+
+            } catch (error) {
+                loadingDiv.style.display = 'none';
+                console.error('Error:', error);
+                resultsList.innerHTML = '<li class="no-results">發生錯誤，請稍後再試。</li>';
+            }
+        }
+
+        // 初始化：預設顯示前 20 筆電影
+        performSearch();
+    </script>
+</body>
+</html>
