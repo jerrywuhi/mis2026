@@ -1,3 +1,6 @@
+import requests
+from bs4 import BeautifulSoup
+
 import os
 import json
 import firebase_admin
@@ -20,13 +23,72 @@ firebase_admin.initialize_app(cred)
 
 
 
-from flask import Flask,render_template, request
+from flask import Flask,render_template, request,jsonify
 from datetime import datetime
 import random
 
 
 app = Flask(__name__)
 
+
+TARGET_URL = 'http://www.atmovies.com.tw/movie/next/'
+#電影的網址
+
+
+
+def get_atmovies_list():
+    movies_list = []
+    try:
+        # 1. 發送 GET 請求
+        response = requests.get(TARGET_URL)
+        response.encoding = 'utf-8' # 確保中文不亂碼
+        
+        if response.status_code == 200:
+            # 2. 解析 HTML
+            soup = BeautifulSoup(response.text, 'html.parser')
+            
+            # 3. 根據 ATMovies 的結構抓取電影連結
+            # ATMovies 的結構通常是 <a href="/movie/.../">電影名稱</a>
+            # 他們的電影列表常在某些特定的 table 或 div 裡
+            # 這裡我們嘗試抓取所有包含 "/movie/" 的 a 標籤
+            
+            # 方法一 (較寬鬆): 抓取所有連結包含 /movie/ 且不是首頁的
+            for link in soup.find_all('a', href=True):
+                href = link['href']
+                title = link.get_text(strip=True)
+                
+                # 過濾：必須是完整的電影連結 (通常長度較長)，且有標題
+                if href.startswith('/movie/'):
+                    # 組合完整網址
+                    full_url = 'http://www.atmovies.com.tw' + href
+                    
+                    # 避免重複 (例如圖片和標題都連到同一頁)
+                    is_duplicate = False
+                    for existing_movie in movies_list:
+                        if existing_movie['url'] == full_url:
+                            is_duplicate = True
+                            break
+                    
+                    if not is_duplicate and len(title) > 0 and 'index.html' not in href:
+                         movies_list.append({
+                            'title': title,
+                            'url': full_url
+                        })
+            
+            # 方法二 (較精準，需觀察當前網頁結構，通常更有效):
+            # 經觀察，ATMmovies 的電影名通常在 class 為 'runtime' 附近的 'a' 標籤
+            # 或者在 class 為 'filmTitle' 的 div 內
+            
+            # 嘗試抓取特定 class (根據網頁結構微調)
+            # movies_elements = soup.select('.filmTitle a') # 這是最理想的情況，但網頁結構會變
+            # for movie in movies_elements:
+            #     # ... 處理方式同上
+        
+    except Exception as e:
+        print(f"爬取發生錯誤: {e}")
+        return []
+
+    return movies_list
 
 @app.route("/")
 def index():
@@ -38,7 +100,56 @@ def index():
     link +="<a href=/account>密碼</a><hr>"
     link += "<a href=/read>讀取Firestore資料(根據lab遞減排序，取前4筆)</a>"
     link += "<a href=/search>查詢老師研究室</a><hr>"
+    link += "<a href=/movie_page>電影查詢</a><hr>"
     return link    
+
+
+
+@app.route('/movie_page')
+def movie_page():
+    # 這裡會呈現 HTML 頁面
+    return render_template('index.html')
+
+@app.route('/get_movies', methods=['GET'])
+def search_movies():
+    # 獲取前端傳來的關鍵字
+    query = request.args.get('query', '').strip().lower()
+    
+    # 爬取完整列表
+    all_movies = get_atmovies_list()
+    
+    if not query:
+        # 如果沒輸入關鍵字，回傳前 10 筆（或全部）
+        return jsonify(all_movies[:20])
+        
+    # **核心搜尋邏輯**：過濾出名稱包含關鍵字的電影
+    filtered_movies = []
+    for movie in all_movies:
+        if query in movie['title'].lower():
+            filtered_movies.append(movie)
+            
+    return jsonify(filtered_movies)
+
+if __name__ == '__main__':
+    # 啟動伺服器，預設是 http://127.0.0.1:5000
+    app.run(debug=True)
+
+
+
+@app.route("/sp1")
+def sp1():
+    R = ""
+    ur1 ="http://127.0.0.1:5000/about" 
+    Data = requests.get(ur1)
+    Data.encoding = "utf-8"
+    sp = BeautifulSoup(Data.text,"html.parser")
+    result=sp.select("td a")
+
+    for item in result:
+        R += item.text + "<br>" + item.get("href") + "<br><br>"
+    return R
+
+
 
 @app.route("/search", methods=["GET", "POST"])
 def search():
