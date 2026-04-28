@@ -74,7 +74,33 @@ def index():
     link += "<a href=/search>查詢老師研究室</a><hr>"
     link += "<a href=/movie_page>電影查詢</a><hr>"
     link += "<br><a href=/movie2>讀取開眼電影即將上映影片，寫入Firestore</a><br>"
+    link += "<a href=/movie_search>電影資料庫查詢</a><hr>"
     return link
+
+
+@app.route('/movie_search')
+def movie_search():
+    # 這會開啟上面那個 HTML 頁面
+    return render_template('movie_search.html')
+
+
+@app.route("/search_woman")
+def search_woman():
+    info = ""
+    db = firestore.client()  
+    docs = db.collection("電影").get() 
+    for doc in docs:
+        movie_data = doc.to_dict()
+        if "女" in movie_data.get("title", ""):
+            info += "片名：" + movie_data.get("title", "") + "<br>" 
+            info += "海報：" + movie_data.get("picture", "") + "<br>"
+            info += "影片介紹：" + movie_data.get("hyperlink", "") + "<br>"
+            info += "片長：" + movie_data.get("showLength", "") + " 分鐘<br>" 
+            info += "上映日期：" + movie_data.get("showDate", "") + "<br><br>"           
+    if not info:
+        return "目前資料庫中沒有片名包含「女」的電影。<br><a href=/>回到首頁</a>"
+    return info
+
 
 @app.route("/mis")
 def course():
@@ -200,6 +226,9 @@ def sp1():
     except:
         r_content = "無法讀取本地 URL，請確保伺服器已啟動。"
     return r_content
+# 建議將 db 初始化放在外面
+
+
 
 # --- 5. 啟動區塊 (必須放在最後) ---
 if __name__ == '__main__':
