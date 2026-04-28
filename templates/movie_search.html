@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>電影資訊查詢系統</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 20px auto; padding: 20px; line-height: 1.6; }
+        .search-box { margin-bottom: 30px; text-align: center; }
+        input[type="text"] { padding: 10px; width: 60%; font-size: 16px; border: 1px solid #ccc; border-radius: 4px; }
+        button { padding: 10px 20px; font-size: 16px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background-color: #0056b3; }
+        .movie-card { border: 1px solid #ddd; padding: 15px; margin-bottom: 10px; border-radius: 8px; display: flex; align-items: center; }
+        .movie-card img { max-width: 100px; margin-right: 20px; border-radius: 4px; }
+        .movie-info h3 { margin: 0 0 10px 0; color: #333; }
+        .movie-info p { margin: 5px 0; font-size: 14px; color: #666; }
+        #results { margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+    <div class="search-box">
+        <h1>電影資訊查詢</h1>
+        <input type="text" id="query" placeholder="輸入電影片名關鍵字...">
+        <button onclick="searchMovies()">搜尋</button>
+    </div>
+
+    <div id="results">
+        </div>
+
+    <script>
+        async function searchMovies() {
+            const query = document.getElementById('query').value;
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '查詢中...';
+
+            try {
+                // 呼叫你 Flask 中的 /get_movies 路由
+                const response = await fetch(`/get_movies?query=${encodeURIComponent(query)}`);
+                const movies = await response.json();
+
+                resultsDiv.innerHTML = '';
+
+                if (movies.length === 0) {
+                    resultsDiv.innerHTML = '<p>找不到相關電影。</p>';
+                    return;
+                }
+
+                movies.forEach(movie => {
+                    const card = document.createElement('div');
+                    card.className = 'movie-card';
+                    
+                    // 根據你的資料格式顯示，若無圖片則不顯示
+                    const imgHtml = movie.picture ? `<img src="${movie.picture}" alt="海報">` : '';
+                    
+                    card.innerHTML = `
+                        ${imgHtml}
+                        <div class="movie-info">
+                            <h3><a href="${movie.url || movie.hyperlink}" target="_blank">${movie.title}</a></h3>
+                            ${movie.showDate ? `<p>上映日期：${movie.showDate}</p>` : ''}
+                            ${movie.showLength ? `<p>片長：${movie.showLength} 分鐘</p>` : ''}
+                        </div>
+                    `;
+                    resultsDiv.appendChild(card);
+                });
+            } catch (error) {
+                resultsDiv.innerHTML = '<p style="color:red;">發生錯誤，請稍後再試。</p>';
+                console.error('Error:', error);
+            }
+        }
+    </script>
+</body>
+</html>
