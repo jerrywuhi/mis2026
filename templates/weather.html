@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>天氣查詢系統</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; background-color: #f0f8ff; }
+        .container { background: white; padding: 20px; border-radius: 10px; display: inline-block; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        input { padding: 10px; width: 200px; border: 1px solid #ccc; border-radius: 5px; }
+        button { padding: 10px 20px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background-color: #0056b3; }
+        .result { margin-top: 20px; font-size: 1.2em; color: #333; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>☁️ 縣市天氣查詢</h1>
+        <form action="/weather" method="get">
+            <input type="text" name="city" placeholder="輸入縣市 (如：臺中市)" required>
+            <button type="submit">查詢</button>
+        </form>
+
+        {% if city %}
+        <div class="result">
+            <hr>
+            <h3>{{ city }} 目前天氣預報</h3>
+            <p>天氣狀況：<strong>{{ weather_state }}</strong></p>
+            <p>降雨機率：<strong>{{ rain_chance }}%</strong></p>
+        </div>
+        {% elif error %}
+        <div class="result" style="color: red;">
+            <p>{{ error }}</p>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>
