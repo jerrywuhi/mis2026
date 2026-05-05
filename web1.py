@@ -2,7 +2,6 @@ import os
 import json
 import random
 import requests
-import urllib3
 from datetime import datetime
 from bs4 import BeautifulSoup
 
@@ -11,7 +10,7 @@ from firebase_admin import credentials, firestore
 from google.cloud.firestore_v1.base_query import FieldFilter
 from flask import Flask, render_template, request, jsonify
 
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
 
 # --- 1. 初始化 Firebase ---
 if os.path.exists('serviceAccountKey.json'):
@@ -117,34 +116,38 @@ def weather():
     Rain = json.loads(Data.text)["records"]["location"][0]["weatherElement"][1]["time"][0]["parameter"]["parameterName"]
     return city + "目前天氣預報：" + Weather + "，降雨機率：" + Rain + "%"
  
-@app.route('/weather_search')
+@app.route('/weather_search', methods=['GET', 'POST'])
 def weather_search():
-    city = request.args.get('city')
+    weather_data = None
+    city = ""
     
-    # 如果使用者還沒輸入 city，就只顯示空白網頁
-    if not city:
-        return render_template('weather.html')
+    if request.method == 'POST':
+        city = request.form.get('city', '')
+        # 統一轉換為「臺」
+        formatted_city = city.replace("台", "臺")
+        
+        # 串接氣象局 API (請確保你的 Authorization key 是正確的)
+        auth_key = "rdec-key-123-45678-011121314"
+        url = f"https://opendata.cwa.gov.tw/api/v1/rest/datastore/F-C0032-001?Authorization={auth_key}&format=JSON&locationName={formatted_city}"
+        
+        try:
+            response = requests.get(url, verify=False)
+            data = response.json()
+            
+            # 解析資料
+            location_data = data["records"]["location"][0]
+            weather_desc = location_data["weatherElement"][0]["time"][0]["parameter"]["parameterName"]
+            rain_chance = location_data["weatherElement"][1]["time"][0]["parameter"]["parameterName"]
+            
+            weather_data = {
+                "city": city,
+                "description": weather_desc,
+                "rain": rain_chance
+            }
+        except Exception as e:
+            weather_data = {"error": "找不到該縣市的資料或 API 金鑰失效"}
 
-    city = city.replace("台", "臺")
-    url = f"https://opendata.cwa.gov.tw/api/v1/rest/datastore/F-C0032-001?Authorization=rdec-key-123-45678-011121314&format=JSON&locationName={city}"
-    
-    try:
-        response = requests.get(url, verify=False)
-        data = response.json()
-        locations = data["records"]["location"]
-
-        if not locations:
-            return render_template('weather.html', error=f"找不到「{city}」的資料")
-
-        # 提取資料
-        weather_state = locations[0]["weatherElement"][0]["time"][0]["parameter"]["parameterName"]
-        rain_chance = locations[0]["weatherElement"][1]["time"][0]["parameter"]["parameterName"]
-
-        # 將資料傳送到 HTML 模板
-        return render_template('weather.html', city=city, weather_state=weather_state, rain_chance=rain_chance)
-
-    except Exception as e:
-        return render_template('weather.html', error=f"發生錯誤：{e}")
+    return render_template('weather.html', result=weather_data)
 
 
 
