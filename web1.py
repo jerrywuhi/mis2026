@@ -134,7 +134,7 @@ def weather_search():
         locations = data["records"]["location"]
 
         if not locations:
-            return render_template('index.html', error=f"找不到「{city}」的資料")
+            return render_template('weather.html', error=f"找不到「{city}」的資料")
 
         # 提取資料
         weather_state = locations[0]["weatherElement"][0]["time"][0]["parameter"]["parameterName"]
