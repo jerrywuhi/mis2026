@@ -2,6 +2,7 @@ import os
 import json
 import random
 import requests
+import urllib3
 from datetime import datetime
 from bs4 import BeautifulSoup
 
@@ -9,6 +10,8 @@ import firebase_admin
 from firebase_admin import credentials, firestore
 from google.cloud.firestore_v1.base_query import FieldFilter
 from flask import Flask, render_template, request, jsonify
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # --- 1. 初始化 Firebase ---
 if os.path.exists('serviceAccountKey.json'):
@@ -75,7 +78,74 @@ def index():
     link += "<a href=/movie_page>電影查詢</a><hr>"
     link += "<br><a href=/movie2>讀取開眼電影即將上映影片，寫入Firestore</a><br>"
     link += "<a href=/movie_search>電影資料庫查詢</a><hr>"
+    link += "<a href=/weather_search>天氣預報查詢</a><hr>"
     return link
+    return link
+
+@app.route("/road")
+def road():
+    R = " "
+    ur1 = "https://datacenter.taichung.gov.tw/swagger/OpenData/a1b899c0-511f-4e3d-b22b-814982a97e41"
+    Data = requests.get(ur1, verify=False)
+    #print(Data.text)
+    JsonData = json.loads(Data.text)
+    Result = ""
+    Road = input("請輸入欲查詢的路名：")
+    for item in JsonData:
+        if Road in item["路口名稱"]:
+            Result += item["路口名稱"] + "：發生" + item["總件數"] + "件，主因是" + item["主要肇因"] + "\n\n"
+        if Result == "":
+            Result = "抱歉，查無相關資料！"
+    return Result
+    
+
+@app.route('/weather')
+def weather():
+    city = input("請輸入縣市：")
+    city = city.replace("台","臺")
+
+
+    url = "https://opendata.cwa.gov.tw/api/v1/rest/datastore/F-C0032-001?Authorization=rdec-key-123-45678-011121314&format=JSON&locationName="+ city
+    Data = requests.get(url, verify=False)
+#print(Data.text)
+
+    WeatherTitle = json.loads(Data.text)["records"]["datasetDescription"]
+#print(WeatherTitle)
+
+
+    Weather = json.loads(Data.text)["records"]["location"][0]["weatherElement"][0]["time"][0]["parameter"]["parameterName"]
+    Rain = json.loads(Data.text)["records"]["location"][0]["weatherElement"][1]["time"][0]["parameter"]["parameterName"]
+    return city + "目前天氣預報：" + Weather + "，降雨機率：" + Rain + "%"
+ 
+@app.route('/weather_search')
+def weather_search():
+    city = request.args.get('city')
+    
+    # 如果使用者還沒輸入 city，就只顯示空白網頁
+    if not city:
+        return render_template('weather.html')
+
+    city = city.replace("台", "臺")
+    url = f"https://opendata.cwa.gov.tw/api/v1/rest/datastore/F-C0032-001?Authorization=rdec-key-123-45678-011121314&format=JSON&locationName={city}"
+    
+    try:
+        response = requests.get(url, verify=False)
+        data = response.json()
+        locations = data["records"]["location"]
+
+        if not locations:
+            return render_template('index.html', error=f"找不到「{city}」的資料")
+
+        # 提取資料
+        weather_state = locations[0]["weatherElement"][0]["time"][0]["parameter"]["parameterName"]
+        rain_chance = locations[0]["weatherElement"][1]["time"][0]["parameter"]["parameterName"]
+
+        # 將資料傳送到 HTML 模板
+        return render_template('weather.html', city=city, weather_state=weather_state, rain_chance=rain_chance)
+
+    except Exception as e:
+        return render_template('weather.html', error=f"發生錯誤：{e}")
+
 
 
 @app.route('/movie_search')
