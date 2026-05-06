@@ -3,56 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>台中市易肇事路口查詢</title>
+    <title>台中市十大肇事路口統計</title>
     <style>
-        body { font-family: 'Microsoft JhengHei', sans-serif; background-color: #f8f9fa; color: #333; display: flex; justify-content: center; padding: 20px; }
-        .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 800px; }
-        h1 { color: #2c3e50; text-align: center; }
-        .search-group { display: flex; gap: 10px; margin-bottom: 30px; }
-        input[type="text"] { flex-grow: 1; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 16px; }
-        button { padding: 12px 25px; background: #3498db; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; transition: 0.3s; }
-        button:hover { background: #2980b9; }
+        body { font-family: 'Microsoft JhengHei', sans-serif; background-color: #f0f2f5; padding: 40px; }
+        .container { max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #2c3e50; margin-bottom: 30px; }
+        
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { padding: 12px; border-bottom: 1px solid #eee; text-align: left; }
-        th { background-color: #f4f7f6; color: #666; }
-        tr:hover { background-color: #fafafa; }
-        .alert { color: #e74c3c; text-align: center; font-weight: bold; }
+        th { background-color: #34495e; color: white; padding: 12px; text-align: left; }
+        td { padding: 15px; border-bottom: 1px solid #ddd; }
+        tr:hover { background-color: #f9f9f9; }
+
+        .rank { font-weight: bold; width: 50px; text-align: center; }
+        /* 前三名美化 */
+        .rank-1 { color: #FFD700; font-size: 1.2em; } /* 金 */
+        .rank-2 { color: #C0C0C0; font-size: 1.1em; } /* 銀 */
+        .rank-3 { color: #CD7F32; font-size: 1.1em; } /* 銅 */
+        
+        .count-badge {
+            background-color: #e74c3c;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+        .reason-text { color: #7f8c8d; font-size: 0.9em; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>路口事故查詢系統</h1>
-        <p style="text-align: center; color: #7f8c8d;">資料來源：台中市政府 Open Data</p>
-
-        <form action="/road" method="post" class="search-group">
-            <input type="text" name="road_query" placeholder="請輸入路名 (如：中清路)" value="{{ query }}" required>
-            <button type="submit">搜尋路口</button>
-        </form>
-
-        {% if error %}
-            <p class="alert">{{ error }}</p>
-        {% endif %}
-
-        {% if results %}
-            <table>
-                <thead>
-                    <tr>
-                        <th>路口名稱</th>
-                        <th>事故總件數</th>
-                        <th>主要肇事原因</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in results %}
-                    <tr>
-                        <td><strong>{{ item.location }}</strong></td>
-                        <td>{{ item.count }} 件</td>
-                        <td>{{ item.reason }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        {% endif %}
+        <h1>⚠️ 台中市十大肇事路口排行榜</h1>
+        <table>
+            <thead>
+                <tr>
+                    <th>排名</th>
+                    <th>路口名稱</th>
+                    <th>肇事件數</th>
+                    <th>主要肇因</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in locations %}
+                <tr>
+                    <td class="rank rank-{{ loop.index if loop.index <= 3 else 'other' }}">
+                        {{ loop.index }}
+                    </td>
+                    <td><strong>{{ item['路口名稱'] }}</strong></td>
+                    <td><span class="count-badge">{{ item['總件數'] }} 件</span></td>
+                    <td class="reason-text">{{ item['主要肇原因'] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </body>
 </html>
