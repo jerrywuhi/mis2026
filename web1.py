@@ -78,6 +78,7 @@ def index():
     link += "<br><a href=/movie2>讀取開眼電影即將上映影片，寫入Firestore</a><br>"
     link += "<a href=/movie_search>電影資料庫查詢</a><hr>"
     link += "<a href=/weather_search>天氣預報查詢</a><hr>"
+    link += "<a href=/road_search>交通事件查詢</a><hr>"
     return link
     return link
 
@@ -149,7 +150,35 @@ def weather_search():
 
     return render_template('weather.html', result=weather_data)
 
+@app.route("/road_search", methods=["GET"])
+def road_search():
+    # 獲取使用者在網頁搜尋框輸入的內容
+    search_query = request.args.get("road_name", "")
+    results = []
+    message = ""
 
+    if search_query:
+        try:
+            url = "https://datacenter.taichung.gov.tw/swagger/OpenData/a1b899c0-511f-4e3d-b22b-814982a97e41"
+            # 抓取資料 (提醒：verify=False 會跳過 SSL 驗證，開發時可用但生產環境建議注意)
+            response = requests.get(url, verify=False)
+            data_list = json.loads(response.text)
+
+            # 篩選資料
+            for item in data_list:
+                if search_query in item.get("路口名稱", ""):
+                    results.append({
+                        "name": item.get("路口名稱"),
+                        "count": item.get("總件數"),
+                        "reason": item.get("主要肇因")
+                    })
+            
+            if not results:
+                message = "抱歉，查無相關資料！"
+        except Exception as e:
+            message = f"發生錯誤：{e}"
+
+    return render_template("road.html", results=results, message=message, query=search_query)
 
 @app.route('/movie_search')
 def movie_search():
