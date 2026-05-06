@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>台中市路口事故查詢</title>
+    <style>
+        body { font-family: sans-serif; margin: 40px; line-height: 1.6; }
+        .search-box { margin-bottom: 20px; }
+        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #f4f4f4; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h2>台中市易肇事路口資料查詢</h2>
+    
+    <div class="search-box">
+        <form action="/" method="get">
+            <input type="text" name="road_name" placeholder="請輸入路口名稱 (例如：中清路)" value="{{ query }}">
+            <button type="submit">搜尋</button>
+        </form>
+    </div>
+
+    {% if message %}
+        <p class="error">{{ message }}</p>
+    {% endif %}
+
+    {% if results %}
+        <table>
+            <thead>
+                <tr>
+                    <th>路口名稱</th>
+                    <th>總件數</th>
+                    <th>主要肇因</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in results %}
+                <tr>
+                    <td>{{ item.name }}</td>
+                    <td>{{ item.count }} 件</td>
+                    <td>{{ item.reason }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+</body>
+</html>
