@@ -150,35 +150,41 @@ def weather_search():
 
     return render_template('weather.html', result=weather_data)
 
-@app.route("/road_search", methods=["GET"])
+@app.route("/road_search", methods=["GET", "POST"])
 def road_search():
-    # 獲取使用者在網頁搜尋框輸入的內容
-    search_query = request.args.get("road_name", "")
-    results = []
-    message = ""
+    # 預設變數
+    result_list = []
+    error_msg = ""
+    user_input = ""
 
-    if search_query:
+    # 當使用者按下搜尋按鈕時
+    if request.method == "POST":
+        user_input = request.form.get("road_query", "")
+        
         try:
+            # 你原本截圖中的 API 網址
             url = "https://datacenter.taichung.gov.tw/swagger/OpenData/a1b899c0-511f-4e3d-b22b-814982a97e41"
-            # 抓取資料 (提醒：verify=False 會跳過 SSL 驗證，開發時可用但生產環境建議注意)
+            # 抓取資料
             response = requests.get(url, verify=False)
-            data_list = json.loads(response.text)
+            jsonData = json.loads(response.text)
 
-            # 篩選資料
-            for item in data_list:
-                if search_query in item.get("路口名稱", ""):
-                    results.append({
-                        "name": item.get("路口名稱"),
+            # 邏輯處理：對比路口名稱
+            for item in jsonData:
+                if user_input in item.get("路口名稱", ""):
+                    result_list.append({
+                        "location": item.get("路口名稱"),
                         "count": item.get("總件數"),
                         "reason": item.get("主要肇因")
                     })
             
-            if not results:
-                message = "抱歉，查無相關資料！"
+            if not result_list and user_input:
+                error_msg = "抱歉，查無相關資料！"
+                
         except Exception as e:
-            message = f"發生錯誤：{e}"
+            error_msg = f"連線錯誤：{e}"
 
-    return render_template("road.html", results=results, message=message, query=search_query)
+    # 將結果傳送到 HTML 網頁
+    return render_template("road.html", results=result_list, error=error_msg, query=user_input)
 
 @app.route('/movie_search')
 def movie_search():
