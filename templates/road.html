@@ -2,49 +2,57 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <title>台中市路口事故查詢</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>台中市易肇事路口查詢</title>
     <style>
-        body { font-family: sans-serif; margin: 40px; line-height: 1.6; }
-        .search-box { margin-bottom: 20px; }
-        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
-        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-        th { background-color: #f4f4f4; }
-        .error { color: red; }
+        body { font-family: 'Microsoft JhengHei', sans-serif; background-color: #f8f9fa; color: #333; display: flex; justify-content: center; padding: 20px; }
+        .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 800px; }
+        h1 { color: #2c3e50; text-align: center; }
+        .search-group { display: flex; gap: 10px; margin-bottom: 30px; }
+        input[type="text"] { flex-grow: 1; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 16px; }
+        button { padding: 12px 25px; background: #3498db; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; transition: 0.3s; }
+        button:hover { background: #2980b9; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px; border-bottom: 1px solid #eee; text-align: left; }
+        th { background-color: #f4f7f6; color: #666; }
+        tr:hover { background-color: #fafafa; }
+        .alert { color: #e74c3c; text-align: center; font-weight: bold; }
     </style>
 </head>
 <body>
-    <h2>台中市易肇事路口資料查詢</h2>
-    
-    <div class="search-box">
-        <form action="/" method="get">
-            <input type="text" name="road_name" placeholder="請輸入路口名稱 (例如：中清路)" value="{{ query }}">
-            <button type="submit">搜尋</button>
+    <div class="container">
+        <h1>路口事故查詢系統</h1>
+        <p style="text-align: center; color: #7f8c8d;">資料來源：台中市政府 Open Data</p>
+
+        <form action="/road" method="post" class="search-group">
+            <input type="text" name="road_query" placeholder="請輸入路名 (如：中清路)" value="{{ query }}" required>
+            <button type="submit">搜尋路口</button>
         </form>
+
+        {% if error %}
+            <p class="alert">{{ error }}</p>
+        {% endif %}
+
+        {% if results %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>路口名稱</th>
+                        <th>事故總件數</th>
+                        <th>主要肇事原因</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in results %}
+                    <tr>
+                        <td><strong>{{ item.location }}</strong></td>
+                        <td>{{ item.count }} 件</td>
+                        <td>{{ item.reason }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
     </div>
-
-    {% if message %}
-        <p class="error">{{ message }}</p>
-    {% endif %}
-
-    {% if results %}
-        <table>
-            <thead>
-                <tr>
-                    <th>路口名稱</th>
-                    <th>總件數</th>
-                    <th>主要肇因</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in results %}
-                <tr>
-                    <td>{{ item.name }}</td>
-                    <td>{{ item.count }} 件</td>
-                    <td>{{ item.reason }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% endif %}
 </body>
 </html>
