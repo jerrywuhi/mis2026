@@ -8,7 +8,10 @@ from bs4 import BeautifulSoup
 import firebase_admin
 from firebase_admin import credentials, firestore
 from google.cloud.firestore_v1.base_query import FieldFilter
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, make_response
+
+
+
 
 
 
@@ -79,8 +82,10 @@ def index():
     link += "<a href=/movie_search>電影資料庫查詢</a><hr>"
     link += "<a href=/weather_search>天氣預報查詢</a><hr>"
     link += "<a href=/road_search>交通事件查詢</a><hr>"
+    link += "<a href=/webhook>電影分級</a><hr>"
+
     return link
-    return link
+    
 
 @app.route("/road")
 def road():
@@ -98,6 +103,19 @@ def road():
             Result = "抱歉，查無相關資料！"
     return Result
     
+@app.route("/webhook", methods=["POST"])
+def webhook():
+    # build a request object
+    req = request.get_json(force=True)
+    # fetch queryResult from json
+    action =  req.get("queryResult").get("action")
+    msg =  req.get("queryResult").get("queryText")
+    info = "我是吳冠頡設計的電影聊天機器人動作：" + action + "； 查詢內容：" + msg
+    return make_response(jsonify({"fulfillmentText": info}))
+
+
+
+
 
 @app.route('/weather')
 def weather():
