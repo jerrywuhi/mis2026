@@ -103,17 +103,8 @@ def road():
             Result = "抱歉，查無相關資料！"
     return Result
     
-@app.route("/webhook", methods=["POST"])
-def webhook():
-    # build a request object
-    req = request.get_json(force=True)
-    # fetch queryResult from json
-    action =  req.get("queryResult").get("action")
-    msg =  req.get("queryResult").get("queryText")
-    info = "我是吳冠頡設計的電影聊天機器人動作：" + action + "； 查詢內容：" + msg
-    return make_response(jsonify({"fulfillmentText": info}))
 
-@app.route("/webhook3", methods=["POST"])
+@app.route("/webhook", methods=["POST"])
 def webhook3():
     # build a request object
     req = request.get_json(force=True)
