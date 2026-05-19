@@ -127,6 +127,9 @@ def webhook3():
         info += result
     return make_response(jsonify({"fulfillmentText": info}))
 
+@app.route("/demo")
+def demo():
+return render_template("demo.html")
 
 @app.route("/rate")
 def rate():
