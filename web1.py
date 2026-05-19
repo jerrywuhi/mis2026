@@ -129,7 +129,7 @@ def webhook3():
 
 @app.route("/demo")
 def demo():
-return render_template("demo.html")
+    return render_template("demo.html")
 
 @app.route("/rate")
 def rate():
