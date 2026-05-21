@@ -102,119 +102,97 @@ def road():
         if Result == "":
             Result = "抱歉，查無相關資料！"
     return Result
-    
-@app.route("/webhook", methods=["POST"])
+
+@app.route("/webhook3", methods=["POST"])
 def webhook3():
+    # build a request object
     req = request.get_json(force=True)
-    
-    # 安全地抓取 action，避免為 None 
-    query_result = req.get("queryResult", {})
-    action = query_result.get("action")
-    
-    # 1. 先給 info 一個預設值，避免 action 不符時程式崩潰
-    info = "抱歉，我聽不懂你在說什麼。"
-    
-    if action == "rateChoice":
-        rate = query_result.get("parameters", {}).get("rate")
-        info = f"我是吳冠頡開發的電影聊天機器人，您選擇的電影分級是：{rate}，相關電影：\n\n"
-        
-        # 2. 統一使用 "本週新片含分級"
-        collection_ref = db.collection("本週新片含分級")
+    # fetch queryResult from json
+    action =  req.get("queryResult").get("action")
+    #msg =  req.get("queryResult").get("queryText")
+    #info = "動作：" + action + "； 查詢內容：" + msg
+    if (action == "rateChoice"):
+        rate =  req.get("queryResult").get("parameters").get("rate")
+        info = "我是吳冠頡開發的電影聊天機器人,您選擇的電影分級是：" + rate + "，相關電影：\n"
+        db = firestore.client()
+        collection_ref = db.collection("電影含分級")
         docs = collection_ref.get()
-        
         result = ""
         for doc in docs:
-            movie_dict = doc.to_dict()
-            # 確保資料庫裡有 rate 欄位再比對
-            if "rate" in movie_dict and movie_dict["rate"] == rate:
-                result += f"片名：{movie_dict.get('title')}\n"
-                result += f"介紹：{movie_dict.get('hyperlink')}\n\n"
-        
-        if result == "":
-            result = "本週剛好沒有這個分級的新片喔！\n"
-            
+            dict = doc.to_dict()
+            if rate in dict["rate"]:
+                result += "片名：" + dict["title"] + "\n"
+                result += "介紹：" + dict["hyperlink"] + "\n\n"
         info += result
-
     return make_response(jsonify({"fulfillmentText": info}))
+
+
 
 
 @app.route("/rate")
 def rate():
+    #本週新片
     url = "https://www.atmovies.com.tw/movie/new/"
     Data = requests.get(url)
     Data.encoding = "utf-8"
     sp = BeautifulSoup(Data.text, "html.parser")
-    
-    try:
-        lastUpdate = sp.find(class_="smaller09").text[5:]
-    except AttributeError:
-        lastUpdate = "未知"
+    lastUpdate = sp.find(class_="smaller09").text[5:]
+    print(lastUpdate)
+    print()
 
-    result = sp.select(".filmList")
+    result=sp.select(".filmList")
 
     for x in result:
-        try:
-            title = x.find("a").text
-            introduce = x.find("p").text
+        title = x.find("a").text
+        introduce = x.find("p").text
 
-            movie_id = x.find("a").get("href").replace("/", "").replace("movie", "")
-            hyperlink = "http://www.atmovies.com.tw/movie/" + movie_id
-            picture = "https://www.atmovies.com.tw/photo101/" + movie_id + "/pm_" + movie_id + ".jpg"
+        movie_id = x.find("a").get("href").replace("/", "").replace("movie", "")
+        hyperlink = "http://www.atmovies.com.tw/movie/" + movie_id
+        picture = "https://www.atmovies.com.tw/photo101/" + movie_id + "/pm_" + movie_id + ".jpg"
 
-            # 處理分級圖片
-            r = x.find(class_="runtime").find("img")
-            rate = "未定級"
-            if r is not None:
-                rr = r.get("src").replace("/images/cer_", "").replace(".gif", "")
-                if rr == "G":
-                    rate = "普遍級"
-                elif rr == "P":
-                    rate = "保護級"
-                elif rr == "F2":
-                    rate = "輔12級"
-                elif rr == "F5":
-                    rate = "輔15級"
-                elif rr == "R":
-                    rate = "限制級"
+        r = x.find(class_="runtime").find("img")
+        rate = ""
+        if r != None:
+            rr = r.get("src").replace("/images/cer_", "").replace(".gif", "")
+            if rr == "G":
+                rate = "普遍級"
+            elif rr == "P":
+                rate = "保護級"
+            elif rr == "F2":
+                rate = "輔12級"
+            elif rr == "F5":
+                rate = "輔15級"
+            else:
+                rate = "限制級"
 
-            # 處理片長與上映日期
-            t = x.find(class_="runtime").text
-            
-            # 安全轉換片長，避免找不到字串或非數字導致崩潰
-            try:
-                t1 = t.find("片長")
-                t2 = t.find("分")
-                showLength = int(t[t1+3:t2])
-            except Exception:
-                showLength = 0  # 預設為 0
+        t = x.find(class_="runtime").text
 
-            try:
-                t1 = t.find("上映日期")
-                t2 = t.find("上映廳數")
-                showDate = t[t1+5:t2-8]
-            except Exception:
-                showDate = "未定"
+        t1 = t.find("片長")
+        t2 = t.find("分")
+        showLength = t[t1+3:t2]
 
-            doc = {
-                "title": title,
-                "introduce": introduce,
-                "picture": picture,
-                "hyperlink": hyperlink,
-                "showDate": showDate,
-                "showLength": showLength,
-                "rate": rate,
-                "lastUpdate": lastUpdate
-            }
+        t1 = t.find("上映日期")
+        t2 = t.find("上映廳數")
+        showDate = t[t1+5:t2-8]
 
-            # db 移到迴圈外，這裡直接使用
-            doc_ref = db.collection("本週新片含分級").document(movie_id)
-            doc_ref.set(doc)
-            
-        except Exception as e:
-            print(f"解析單部電影時發生錯誤，跳過該部電影。錯誤訊息: {e}")
-            continue
+        doc = {
+            "title": title,
+            "introduce": introduce,
+            "picture": picture,
+            "hyperlink": hyperlink,
+            "showDate": showDate,
+            "showLength": int(showLength),
+            "rate": rate,
+            "lastUpdate": lastUpdate
+        }
 
+        db = firestore.client()
+        doc_ref = db.collection("本週新片含分級").document(movie_id)
+        doc_ref.set(doc)
     return "本週新片已爬蟲及存檔完畢，網站最近更新日期為：" + lastUpdate
+
+
+
 
 @app.route('/weather')
 def weather():
