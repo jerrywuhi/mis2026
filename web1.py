@@ -103,7 +103,7 @@ def road():
             Result = "抱歉，查無相關資料！"
     return Result
 
-@app.route("/webhook3", methods=["POST"])
+@app.route("/webhook", methods=["POST"])
 def webhook3():
     # build a request object
     req = request.get_json(force=True)
