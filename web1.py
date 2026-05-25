@@ -128,7 +128,6 @@ def webhook3():
 
 
 
-
 @app.route("/rate")
 def rate():
     #本週新片
@@ -187,11 +186,9 @@ def rate():
         }
 
         db = firestore.client()
-        doc_ref = db.collection("本週新片含分級").document(movie_id)
+        doc_ref = db.collection("電影含分級").document(movie_id)
         doc_ref.set(doc)
     return "本週新片已爬蟲及存檔完畢，網站最近更新日期為：" + lastUpdate
-
-
 
 
 @app.route('/weather')
