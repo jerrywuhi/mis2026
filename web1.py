@@ -158,9 +158,10 @@ def webhook3():
                 result += "片名：" + dict["title"] + "\n"
                 result += "介紹：" + dict["hyperlink"] + "\n\n"
         info += result
+        
     elif (action == "input.unknown"):
         ai_config = types.GenerateContentConfig(
-            max_output_tokens = 128
+            max_output_tokens = 500
         )
 
         response = client.models.generate_content(
