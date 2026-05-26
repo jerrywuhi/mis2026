@@ -160,10 +160,10 @@ def webhook3():
         info += result
     elif (action == "input.unknown"):
         #info =  req["queryResult"]["queryText"]
-        # 每次使用者拜訪該路徑時，直接使用全域的 client 呼叫模型
+        
 
          ai_config = types.GenerateContentConfig(
-        max_output_tokens = 128
+        max_output_tokens = 500
         )
 
         response = client.models.generate_content(
