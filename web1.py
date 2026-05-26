@@ -160,7 +160,7 @@ def webhook3():
         info += result
     elif (action == "input.unknown"):
          ai_config = types.GenerateContentConfig(
-        max_output_tokens = 500
+        max_output_tokens = 128
         )
 
         response = client.models.generate_content(
