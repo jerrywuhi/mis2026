@@ -4,6 +4,7 @@ import random
 import requests
 from datetime import datetime
 from bs4 import BeautifulSoup
+from google import genai
 
 import firebase_admin
 from firebase_admin import credentials, firestore
@@ -34,6 +35,7 @@ if cred and not firebase_admin._apps:
 
 # --- 2. Flask App 設定 ---
 app = Flask(__name__)
+client = genai.Client()
 TARGET_URL = 'http://www.atmovies.com.tw/movie/next/'
 
 # --- 3. 輔助函式 (爬蟲邏輯) ---
@@ -86,6 +88,17 @@ def index():
 
     return link
     
+@app.route("/AI")
+def AI():
+    # 每次使用者拜訪該路徑時，直接使用全域的 client 呼叫模型
+    response = client.models.generate_content(
+        model='gemini-3.5-flash',
+        contents='我想查詢靜宜大學資管系的評價？',
+    )
+    
+    # 回傳生成的文字
+    return response.text
+
 
 @app.route("/road")
 def road():
