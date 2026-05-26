@@ -159,9 +159,6 @@ def webhook3():
                 result += "介紹：" + dict["hyperlink"] + "\n\n"
         info += result
     elif (action == "input.unknown"):
-        #info =  req["queryResult"]["queryText"]
-        
-
          ai_config = types.GenerateContentConfig(
         max_output_tokens = 500
         )
