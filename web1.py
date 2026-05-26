@@ -5,6 +5,7 @@ import requests
 from datetime import datetime
 from bs4 import BeautifulSoup
 from google import genai
+from google.genai import types
 
 import firebase_admin
 from firebase_admin import credentials, firestore
@@ -159,10 +160,16 @@ def webhook3():
         info += result
     elif (action == "input.unknown"):
         #info =  req["queryResult"]["queryText"]
-            # 每次使用者拜訪該路徑時，直接使用全域的 client 呼叫模型
+        # 每次使用者拜訪該路徑時，直接使用全域的 client 呼叫模型
+
+         ai_config = types.GenerateContentConfig(
+        max_output_tokens = 128
+        )
+
         response = client.models.generate_content(
             model='gemini-3.5-flash',
             contents=req["queryResult"]["queryText"],
+            config=ai_config,
         )
         
         # 回傳生成的文字
