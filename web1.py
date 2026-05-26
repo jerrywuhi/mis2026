@@ -158,7 +158,7 @@ def webhook3():
                 result += "片名：" + dict["title"] + "\n"
                 result += "介紹：" + dict["hyperlink"] + "\n\n"
         info += result
-        
+
     elif (action == "input.unknown"):
         ai_config = types.GenerateContentConfig(
             max_output_tokens = 500
@@ -171,7 +171,7 @@ def webhook3():
         )
         
         # 回傳生成的文字
-        infor = response.text
+        info = response.text
 
     return make_response(jsonify({"fulfillmentText": info}))
 
