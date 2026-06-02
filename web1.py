@@ -164,8 +164,6 @@ def webhook3():
             "你是一個熱心且知識豐富的專業智慧助理。"
             "對於使用者的提問，請回覆重點的關鍵字，不要重述問題。"         
         )
-
-
         ai_config = types.GenerateContentConfig(
             max_output_tokens=500, 
             system_instruction=instruction_text
